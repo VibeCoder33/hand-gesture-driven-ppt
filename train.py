@@ -9,9 +9,10 @@ from src.features import normalize_landmarks
 
 # 1. Mock classes to convert CSV rows back into MediaPipe-style objects
 class MockPoint:
-    def __init__(self, x, y):
+    def __init__(self, x, y, z):
         self.x = x
         self.y = y
+        self.z = z
 
 class MockLandmarks:
     def __init__(self, points):
@@ -27,7 +28,7 @@ y = df['label'].values
 for index, row in df.iterrows():
     points = []
     for i in range(21):
-        points.append(MockPoint(row[f'x{i}'], row[f'y{i}']))
+        points.append(MockPoint(row[f'x{i}'], row[f'y{i}'], row[f'z{i}']))
         
     mock_landmarks = MockLandmarks(points)
     normalized_vector = normalize_landmarks(mock_landmarks)
