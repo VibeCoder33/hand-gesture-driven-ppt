@@ -1,0 +1,9 @@
+# Use Python 3.10 or 3.11 (mediapipe 0.10.9 has no wheels for newer versions)
+opencv-python==4.8.1.78
+mediapipe==0.10.9
+numpy==1.26.2
+pandas==2.1.4
+scikit-learn==1.3.2
+joblib==1.3.2
+pyautogui==0.9.54
+matplotlib==3.8.2
