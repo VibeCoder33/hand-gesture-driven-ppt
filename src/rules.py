@@ -22,6 +22,9 @@ def rule_based_classifier(landmarks):
     # ARM / DISARM: "L" = index up + thumb out, other fingers curled
     if index_up and not (middle_up or ring_up or pinky_up) and thumb_far:
         return "ARM"
+    # POINTER / SHAKA: thumb out + pinky up, index/middle/ring curled
+    if thumb_far and pinky_up and not (index_up or middle_up or ring_up):
+        return "POINTER"
     # PREVIOUS: open palm = four fingers up (no thumb test; it was unreliable)
     if index_up and middle_up and ring_up and pinky_up:
         return "PREVIOUS"
@@ -29,3 +32,15 @@ def rule_based_classifier(landmarks):
     if index_up and middle_up and not ring_up and not pinky_up:
         return "NEXT"
     return "NEUTRAL"
+
+
+def is_pointing_pose(landmarks):
+    """Checks if hand is in a pointing shape: index finger extended, middle/ring/pinky curled.
+    The thumb may be relaxed or tucked. Used for geometric cursor tracking in pointer mode."""
+    p = landmarks.landmark
+    index_up = p[8].y < p[6].y
+    middle_up = p[12].y < p[10].y
+    ring_up = p[16].y < p[14].y
+    pinky_up = p[20].y < p[18].y
+    return index_up and not (middle_up or ring_up or pinky_up)
+

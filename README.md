@@ -30,21 +30,32 @@ Control a slideshow with hand gestures using only a webcam. A pre-trained model 
 - Presses the **Right** or **Left** arrow key on the active window, so a slideshow moves forward or backward.
 - Stays **locked (DISARMED)** until you show the arm gesture, so normal hand movement while talking does nothing.
 
-## 2. The gestures
+## 2. The gestures & Modes
 
-| Gesture | Hand shape | What happens | Hold time |
-|---|---|---|---|
-| **ARM / DISARM** | **L sign**: index finger up, thumb stuck out about 90 degrees, other fingers curled | Locks or unlocks the system | 0.8 s |
-| **NEXT** | **Peace sign**: index and middle fingers up, ring and pinky down | Next slide (Right arrow) | 0.5 s |
-| **PREVIOUS** | **Open palm**: all five fingers out | Previous slide (Left arrow) | 0.5 s |
-| **NEUTRAL** | Anything else: fist, relaxed hand, pointing, a hand moving between gestures | Nothing | n/a |
+The system operates across three distinct modes:
+```
+DISARMED --(L sign)--> ARMED --(Shaka)--> POINTER MODE --(Shaka)--> ARMED --(L sign)--> DISARMED
+```
+
+| Gesture | Hand shape | What happens | Hold time | Allowed in Mode |
+|---|---|---|---|---|
+| **ARM / DISARM** | **L sign**: index finger up, thumb stuck out ~90 degrees, other fingers curled | Locks or unlocks the presentation system | 0.8 s | DISARMED, ARMED |
+| **POINTER TOGGLE** | **Shaka sign**: thumb and pinky extended, middle three fingers curled | Toggles on/off Pointer Mode | 0.8 s | ARMED, POINTER |
+| **POINTING (Cursor)** | **Index extended**: index finger up/pointing, middle/ring/pinky curled | Moves on-screen mouse/laser pointer to index tip | Real-time | POINTER MODE only |
+| **NEXT** | **Peace sign**: index and middle fingers up, ring and pinky down | Next slide (Right arrow) | 0.5 s | ARMED only |
+| **PREVIOUS** | **Open palm**: all five fingers out | Previous slide (Left arrow) | 0.5 s | ARMED only |
+| **NEUTRAL** | Fist, thumbs-up only, pinky only, relaxed hand, resting pose | No action / Freezes cursor | n/a | All modes |
 
 Rules to know:
+- The system **starts DISARMED**. Hold the L sign for 0.8 s to arm it (`ARMED (Live)`).
+- While ARMED, hold the **Shaka** for 0.8 s to enter **POINTER MODE**.
+- In POINTER MODE, only your index fingertip controls cursor movement within the camera ROI.
+- If your hand leaves the pointing pose, the cursor instantly **freezes** in place (preventing jumpiness when forming the Shaka to exit).
+- In POINTER MODE, slide commands and the ARM command are **strictly ignored** so pointing with a loose thumb will never lock you out.
+- **Safety timeout**: If your hand leaves the camera frame for >= 3.0 seconds while in POINTER MODE, pointer mode automatically turns off and returns to ARMED mode.
+- Each toggle gesture fires **once per hold (latched)**. You must return to neutral before repeating it.
+- After a toggle or slide change, there is an intentional cooldown period.
 
-- The system **starts DISARMED**. Hold the L sign for about a second to arm it. The screen shows `ARMED (Live)`.
-- Each gesture fires **once per hold**. Lower your hand or change shape before repeating it.
-- After a slide changes there is a 1 second cooldown.
-- Use your **right hand**, facing the camera. The camera image is mirrored, like a selfie.
 
 ## 3. Before you start
 
@@ -298,34 +309,36 @@ Tips:
 
 - You can keep the camera window small and in a corner, as long as it's running.
 - Face a light source if you can. A bright window behind you makes the hand dark and hard to detect.
-- **Emergency stop:** move your mouse to any screen corner (PyAutoGUI's fail-safe) or press `q` in the camera window.
+- **Emergency stop:** move your mouse to the **top-left screen corner** (PyAutoGUI's default fail-safe) or press `q` in the camera window.
+- **PowerPoint Laser Pointer:** run `python main.py --ppt-laser` to automatically enable PowerPoint's built-in laser pointer (`Ctrl+L`) upon entering pointer mode, and restore the regular cursor (`Ctrl+A`) upon leaving.
 
-Works with Google Slides in a browser, PDF viewers, and other slideshow programs too, since it only presses Left and Right.
+Works with Google Slides in a browser, PDF viewers, and other slideshow programs too, since it sends standard navigation and mouse pointer events.
 
 ---
 
 ## 11. Recording your own data and retraining
 
-Do this to add more people, improve accuracy, or rebuild the model from scratch.
+Do this to add more people, improve accuracy, record the new **POINTER (Shaka)** gesture, or rebuild the model.
 
 ### Record
 
 Each person records separately, with their own name:
 
 ```
-python collect.py --person alice
+python collect.py --person harsh
 ```
 
 A window opens. Press a number key to record that gesture, move/tilt your hand slowly, and press **`s`** to stop that gesture:
 
 | Key | Records | How to do it |
 |---|---|---|
-| `0` | `NEXT` | Peace sign |
-| `1` | `PREVIOUS` | Open palm, fingers spread |
-| `2` | `ARM` | **Exaggerated L**: thumb clearly out, about 90 degrees from the index finger |
-| `3` | `NEUTRAL` | Fist, relaxed open hand, **pointing with the thumb tucked in**, half-formed gestures, a hand moving between gestures |
-| `s` | Stop | |
-| `q` | Quit and save | |
+| `0` | `NEXT` | Peace sign: index and middle up, ring and pinky down |
+| `1` | `PREVIOUS` | Open palm: all five fingers out |
+| `2` | `ARM` | **Exaggerated L**: thumb stuck out ~90 degrees, index up, other fingers curled |
+| `3` | `NEUTRAL` | **Near-misses & negatives**: thumb out only, pinky up only, pointing hand (thumb tucked or loose), loose fist, relaxed hand |
+| `4` | `POINTER` | **Shaka sign**: thumb and pinky extended, middle three fingers curled |
+| `s` | Stop | Stop recording the current gesture |
+| `q` | Quit and save | Closes webcam and saves data |
 
 There's a 2 second "get ready" countdown after pressing a key, so you have time to get into the pose.
 
@@ -333,19 +346,24 @@ Good practice:
 
 - Record about **1 to 2 minutes per gesture**.
 - Vary **distance** (near and far), **angle** (tilt the hand a little), and **lighting**.
-- `NEUTRAL` is the hardest and most important. Include the in-between poses, because those are what cause accidental triggers.
-- Record **at least 3 to 4 different people**. Models trained on one person usually work worse on others.
-- Run the command once per person with a different `--person` name. All rows go into `data/landmarks.csv`.
+- `NEUTRAL` is the most important: record **targeted near-misses** (only thumb out, only pinky out, pointing finger, relaxed hand). This anchors the decision boundary between Shaka, ARM, and NEUTRAL.
+- Record **at least 2 to 4 different people**. All rows go into `data/landmarks.csv`.
 
-> If `collect.py` says the file has an old header, rename the old file (for example to `data/landmarks_old.csv`) and run again. Newer files include `person_id` and `session` columns.
+### Check and Clean NEUTRAL Conflicts
 
-### Check the hand-coded baseline (optional but useful)
+If you suspect label conflicts in your recorded data:
 
 ```
-python test_baseline.py
+python diagnose_conflicts.py           # Diagnose label ambiguities
+python diagnose_conflicts.py --clean   # Export pruned dataset without contradictory frames
 ```
 
-This scores a simple rule-based classifier (finger counting, no machine learning) on your data, per person. Comparing it with the trained model's results is the evidence that the ML model adds something.
+### Check the hand-coded baseline and run tests
+
+```
+python tests/test_pointer_mode.py      # Run simulated state machine and pointer math tests
+python test_baseline.py                # Evaluate rule-based classifier on landmarks.csv
+```
 
 ### Retrain
 

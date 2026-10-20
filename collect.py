@@ -14,8 +14,9 @@ GESTURES = {
     0: "NEXT",       # peace sign: index + middle up, ring + pinky down
     1: "PREVIOUS",   # open palm: all five fingers out
     2: "ARM",        # "L" sign: index up, thumb stuck out ~90 degrees, other fingers curled
-    3: "NEUTRAL",    # hard negatives: fist, pointing with thumb TUCKED, relaxed open hand,
-                     # half-formed gestures, hand moving between gestures
+    3: "NEUTRAL",    # hard negatives & near-misses: thumb only out, pinky only out,
+                     # pointing hand (index up, thumb curled or loose), loose fist, relaxed hand
+    4: "POINTER",    # Shaka: thumb and pinky extended, middle three fingers curled
 }
 HEADERS = COORD_COLUMNS + ["label", "person_id", "session"]
 
